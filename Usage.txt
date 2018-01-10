@@ -1,0 +1,61 @@
+Combining and Importing GhostKoala (KEGG) and InterProScan Annotations
+Step 1: Run gene calls through GhostKoala Web server. Depending on the size of your input you may need to batch submit and concatenate the results. Results should look something like this:
+$ head keg_output.txt
+Contig_0       K01923
+Contig_1
+Contig_2       K03611
+Contig_3
+Contig_4       K01952
+Contig_5       K01693
+Contig_6       K00817
+Contig_7       K00013
+Contig_8       K00765
+
+For further analysis you’ll need to make sure that row 1 contains both a contig and accession id. If for example the file looks like:
+
+$ head keg_output.txt
+Contig_1
+Contig_2
+Contig_3       K01952
+Contig_4       K01693
+Contig_5       K00817
+Contig_6       K00013
+Contig_7       K00765
+
+You will get an error when you run it saying 
+
+$pandas.parser.CParserError: Error tokenizing data. C error: Expected 1 fields in line 2, saw 2
+
+This error is because when Pandas reads the tab delimited file into a dataframe it sets a precedent using the first row, so if the first row has no accession data then pandas will assume all subsequent rows are only intended to have a single column, rather than two.
+
+Step2: Run InterProScan. The parsing script I built assumes that you ran interprscan using -f tsv, --goterms --iprlookup --pathways
+
+Step3: Download htext from KEGG. This file should download as ko00001.keg (or something similar).  
+Step4: Convert htext to a more readable form in bash. Here is the bash script I used. 
+kegfile="ko00001.keg"
+while read -r prefix content; 
+do case "$prefix" in A) col1="$content" ;;B) col2="$content" ;; C) col3="$content";; D) echo -e "$col1\t$col2\t$col3\t$content";; esac; 
+done < <(sed '/^[#!+]/d;s/<[^>]*>//g;s/^./& /' < "$kegfile") > KO_Orthology_ko00001.txt
+What this is doing is going through the hierarchical ‘.keg’ file you downloaded and extracting the different layers. The output should be a tab delimited file where column 1 corresponds to the broadest classification and column 5 corresponds to the gene itself. You may notice that some of the keg identifiers appear multiple times in this parsed folder. This is because many of the metabolism genes are constituents of multiple pathways.
+$head KO_Orthology_ko00001.txt 
+Metabolism      Overview        01200 Carbon metabolism [PATH:ko01200]  K00844  HK; hexokinase [EC:2.7.1.1]
+Metabolism      Overview        01200 Carbon metabolism [PATH:ko01200]  K12407  GCK; glucokinase [EC:2.7.1.2]
+Metabolism      Overview        01200 Carbon metabolism [PATH:ko01200]  K00845  glk; glucokinase [EC:2.7.1.2]
+Metabolism      Overview        01200 Carbon metabolism [PATH:ko01200]  K00886  ppgK; polyphosphate glucokinase [EC:2.7.1.63]
+Metabolism      Overview        01200 Carbon metabolism [PATH:ko01200]  K08074  ADPGK; ADP-dependent glucokinase [EC:2.7.1.147]
+Step4: Use python script Kegg-to-Anvio.py to create an anvio importable gene annotation file. The options are below. 
+usage: Kegg-to-Anvio.py [-h] [--KeggDB KEGGDB] [-i I]
+                        [--interproscan INTERPROSCAN] [-o O]
+
+Combines annotation Data for input to anvio
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --KeggDB KEGGDB       identify the Kegg Orthology file (modified from htext
+                        using given bash script)
+  -i I                  specify the file containing GhostKoala Results
+  --interproscan INTERPROSCAN
+                        interproscan results
+  -o O                  Specify an output file
+
+The –-KeggDB should be the output from the step 4 (e.g KO_Orthology_ko00001.txt). The –interproscan flag is optional and if you only want to incorporate GhostKoala results then you don’t need to include the file. I included it because these gene calls have e values whereas the GhostKoala results do not. 
