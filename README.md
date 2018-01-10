@@ -13,28 +13,27 @@ authors: [elaina]
 
 {% include _toc.html %}
 
-This tutorial walks you through annotating your contigs with [GhostKOALA](http://www.kegg.jp/ghostkoala/), and compiling the results into a format easily importable to your anvi'o contigs database using `Kegg-to-Anvio.py`. You can download all of the assocaited files for this workflow [here](https://github.com/edgraham/GhostKoalaParser).
+This tutorial walks you through annotating your contigs with [GhostKOALA](http://www.kegg.jp/ghostkoala/), and compiling the results into a format easily importable to your anvi'o contigs database using `Kegg-to-Anvio.py`. You can download all of the associated scripts for this workflow [here](https://github.com/edgraham/GhostKoalaParser).
 
-All you'll need to run this tutorial is an installation of anvi'o, python, and internet access. So first lets download all of files we'll need for this tutorial. They are all on github so we can clone the repository as shown below:
-
-In python you'll need the pandas and BioPython modules. I was running the following versions:
+All you'll need to run this tutorial is an installation of anvi'o, python, and internet access. In python you'll need the pandas and BioPython modules. I was running the following versions when I wrote the code:
 
 [Pandas](https://pandas.pydata.org/): v0.22.0
 [BioPython](http://biopython.org/): v1.70
+
+ So first lets download all of the scripts and files we'll need for this tutorial. They are all on github so we can clone the repository as shown below:
+
 
 ``` bash
  $ git clone https://github.com/edgraham/GhostKoalaParser.git
 ```
 
 This will produce a directory containing all of the files and scripts we'll use throughout this tutorial.
+I'll assumes that you have already begin to follow the [metagenomic workflow tutorial](http://merenlab.org/2016/06/22/anvio-tutorial-v2/) and generated an anvi'o contigs database, lets call it `CONTIGS.db`. Now that you have your database you may want to annotate your gene calls and there are so many ways to do this, but I am going to show you how to pull KEGG annotations into your anvi'o database. We are going to do this through [GhostKOALA](https://doi.org/10.1016/j.jmb.2015.11.006). This is KEGGs metagenome annotating service. Its one of the few ways I have found to access KEGG gene calls for large datasets without our lab subscribing to use the downloadable KEGG database. Before I start I just wanted to recommend that everyone gives the paper a quick glance over because the one thing you'll notice is GhostKOALA will not output Bitscores or E-values and has a built in way of determining whether a particular annotation is accurate or not.
 
-This tutorial assumes that you have assembled your reads into contigs, lets call your contigs file `assembly.fasta`, and have followed the [metagenomic workflow tutorial](http://merenlab.org/2016/06/22/anvio-tutorial-v2/) and generated an anvi'o contigs database, lets call it `CONTIGS.db`.
-
-So lets start from the beginning. 
 
 ### Export Anvio Gene Calls
 
-The first step is exporting amino acid sequences from your anvi'o contigs database. 
+The first step to this is exporting amino acid sequences from your anvi'o contigs database. 
 
 ``` bash
  $ anvi-get-aa-sequences-for-gene-calls -c CONTIGS.db -o protein-sequences.fa
@@ -46,10 +45,9 @@ The first step is exporting amino acid sequences from your anvi'o contigs databa
 {:.notice}
 GhostKOALA does have an upload limit of 300MB. If your anvi'o database is rather large and you find that your `protein-sequences.fa` file is larger than that you can split the file and append the GhostKOALA outputs after this step.
 
-Before we run GhostKOALA we need to make a few modifications to our 'protein-sequences.fa' file. The parser that GhostKOALA uses for fasta sequences appears to have an unfriendly relationship with sequence id's that begin with a number. An example is shown below:
+Next before we run GhostKOALA we need to make a few modifications to our 'protein-sequences.fa' file. The parser that GhostKOALA uses for fasta sequences appears to have an unfriendly relationship with sequence id's that begin with a number and will send you angry error messages if you try and submit the file directly exported from anvi'o which looks like the one below:
 
 ```
-
 >0
 MAEYQNIFTQVQVQGPAEMGVDPAGTLSRERTNGTSFSKLAGLFGNAQLGPIYLGTFGLI
 SLVTGFAWFFMVGLSFWDQVDYSPALFLRELFWLALEPPAEEYGLSIPPMAEGGYFLLAS
@@ -61,10 +59,9 @@ TYLRAEELGMGKHVAWAFASAIWLFLVLGLFRPILMGSWSEMVPYGI
 FPHLDWTNLFSLTYGNLFYNPFHALSIVFLYGSALLFAMHGATILAVSRYGGEREIEQIV
 DRGTASERAALFWRWTMGFNATMEGIHRWAWWFAVLTTLTGGIGILLTGTVVDNWFIWAQ
 DHGYAPLN
-
 ```
 
-To remedy this use the `fix_seq.py` script in the repository you clones from github earlier.
+To remedy this use the `fix_seq.py` script in the repository you cloned from github earlier.
 
 ```
 
@@ -72,7 +69,7 @@ fix_seqs.py protein-sequences.fa > protein-sequences.renammed.fa
 
 ```
 
-You will now have a new file `protein-sequences.renammed.fa` that contains all your gene calls with the id's ammended. This file is now ready to be submitted to GhostKOALA for annotation. To do this go to the [GhostKOALA webserver](http://www.kegg.jp/ghostkoala/). When you get to the page there will be a section that says **Upload query amino acid sequences in FASTA format**. You'll select `Choose File` and upload the file `protein-sequences.renammed.fa`. You'll be asked to input an email address (you can only run one instance of GhostKOALA at a time per email address!). Before the run starts you'll get an email that will look like this:
+You will now have a new file `protein-sequences.renammed.fa` that contains all your gene calls with the id's ammended with the word `genecall_`. This file is now ready to be submitted to GhostKOALA for annotation. To do this go to the [GhostKOALA webserver](http://www.kegg.jp/ghostkoala/). When you get to the page there will be a section that says **Upload query amino acid sequences in FASTA format**. You'll select `Choose File` and upload the file `protein-sequences.renammed.fa`. You'll be asked to input an email address (you can only run one instance of GhostKOALA at a time per email address!). Before the run starts you'll get an email that will look like this:
 
  ```
  Your GhostKOALA job request
@@ -93,7 +90,7 @@ If no action is taken within 24 hours, your request will be deleted.
  
 
 {:.notice}
-The KEGG parser I wrote also has the option to combine your GhostKOALA results with interproscan. If you want to incorporate both genecalls from interproscan and KEGG in the same table follow the tutorial [here](http://merenlab.org/2016/06/18/importing-functions/), **but make the following modification** and run interproscan with the flags `-f tsv --goterms --iprlookup --pathways`. 
+The KEGG parser script also has the option to combine your GhostKOALA results with interproscan. If you want to incorporate both annotations from interproscan and KEGG in the same table follow the tutorial [here](http://merenlab.org/2016/06/18/importing-functions/) to run interproscan, **but run interproscan with the flags** `-f tsv --goterms --iprlookup --pathways`. 
 
 ### Generate the KEGG orthology table
 
@@ -108,7 +105,7 @@ Metabolism      Overview        01200 Carbon metabolism [PATH:ko01200]  K00845  
 Metabolism      Overview        01200 Carbon metabolism [PATH:ko01200]  K00886  ppgK; polyphosphate glucokinase [EC:2.7.1.63]
 Metabolism      Overview        01200 Carbon metabolism [PATH:ko01200]  K08074  ADPGK; ADP-dependent glucokinase [EC:2.7.1.147]
 ```
-This is the information that we'll use to convert the KEGG Orthology assignments to function. Because the KEGG database is currently working under a subscription model I had to find a workaround to access the information to match the Orthologies with function. To do this you have to go to the [KEGG website](http://www.genome.jp/kegg-bin/get_htext?ko00000.keg) and download the htext file. It will download as something along the lines of `ko00001.keg`. Next you can use this very ugly code snippet to parse that file into a readble format.
+This is the file I am going to show you how to generate and contains the information that we'll use to convert the KEGG Orthology assignments to function. Because the KEGG database is currently working under a subscription model I had to find a workaround to access the information to match the Orthologies with function. To do this you have to go to the [KEGG website](http://www.genome.jp/kegg-bin/get_htext?ko00000.keg) and download the htext file. It will download as something along the lines of `ko00001.keg`. Next you can use this (not so beautiful) code snippet to parse that file into the table above.
 
 ```
 kegfile="ko00001.keg"
@@ -117,13 +114,13 @@ do case "$prefix" in A) col1="$content" ;;B) col2="$content" ;; C) col3="$conten
 done < <(sed '/^[#!+]/d;s/<[^>]*>//g;s/^./& /' < "$kegfile") > KO_Orthology_ko00001.txt
 
 ```
-What this is doing is going through the hierarchical ‘.keg’ file you downloaded and extracting the different layers. The output should be a tab delimited file where column 1 corresponds to the broadest classification and column 5 corresponds to the gene itself. You may notice that some of the keg identifiers appear multiple times in this parsed folder. This is because many of the metabolism genes are constituents of multiple pathways.
+What this is doing is going through the hierarchical ‘.keg’ file you downloaded and extracting the different layers. The output should be a tab delimited file where column 1 corresponds to the broadest classification and column 5 corresponds to the gene itself. You may notice that some of the keg identifiers appear multiple times in this parsed folder. This is because many of the metabolism genes are constituents of multiple pathways (a piece of this puzzle that I have yet to determine an efficient way to incorporate into the anvi'o annotations).
 
 Now that you know how I generated the `KO_Orthology_ko00001.txt` lets get back to the fun part and import our functions!
 
 ### Parsing the results from GhostKOALA
 
-Once GhostKOALA has finished running it will send you an email with a link to the results. Download the annotation file, wthe file will be called `user_ko.txt`. The results should look like this:
+Once GhostKOALA has finished running it will send you an email with a link to the results. Download the annotation file (the file will be called `user_ko.txt`). The results should look like this:
 
 ``` bash
  $ head
@@ -186,7 +183,7 @@ Now the next step it pretty simple. If you don't have interproscan results you w
 $ Kegg-to-Anvio.py --KeggDB KO_Orthology_ko00001.txt -i user_ko.txt -o KeggAnnotations-AnviImportable.txt
 ```
 
-if you have interproscan results, lets say in a output file called `interproscan-results.txt` (ran with the flags `-f tsv --goterms --iprlookup --pathways`) then you will run this as:
+if you have interproscan results, lets say in a output file called `interproscan-results.txt` (make sure interproscan was run with the flags `-f tsv --goterms --iprlookup --pathways`) then you will run this as:
 
 ```bash
 $ Kegg-to-Anvio.py --KeggDB KO_Orthology_ko00001.txt -i user_ko.txt -o KeggAnnotations-AnviImportable.txt --interproscan interproscan-results.txt
@@ -199,9 +196,9 @@ $ anvi-import-functions -c CONTIGS.db -i KeggAnnotations-AnviImportable.txt
 
 ```
 {:.notice}
-If you decide you want to knock two birds out with one stone you can also take the taxonomy data produced in ghost koala and convert that to an anvio importable format using the script `GhostKoalaTaxonomy-to-Anvio.py` found in the github repository we downloaded. The taxonomy file will download as a file called `user.out.top`. You can then run the parser like this: `GhostKoalaTaxonomy-to-Anvio.py user.out.top KeggTaxonomy.txt`. Then import into your anvi'o database `anvi-import-taxonomy -c CONTIGS.db -i KeggTaxonomy.txt`.
+If you decide you want to knock two birds out with one stone you can also take the taxonomy data produced in GhostKOALA and convert that to an anvio importable format using the script `GhostKoalaTaxonomy-to-Anvio.py` found in the github repository we downloaded. The taxonomy file will download as a file called `user.out.top`. You can then run the parser like this: `GhostKoalaTaxonomy-to-Anvio.py user.out.top KeggTaxonomy.txt`. Then import into your anvi'o database `anvi-import-taxonomy -c CONTIGS.db -i KeggTaxonomy.txt`.
 
 
-And we now have KEGG functions in our Anvi'o database! Hopefully (in the near future) we can find a better way to do this without us having to do all the convuluted steps with GhostKOALA. In the meantime 
+And we now have KEGG functions in our Anvi'o database! Hopefully (in the near future) we can find a better way to do this without us having to do all the convuluted steps with GhostKOALA. 
 
 <div style="margin:50px">&nbsp;</div>
