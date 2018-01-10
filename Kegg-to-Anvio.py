@@ -27,19 +27,21 @@ xy.columns= ["Category1","Category2","Category3","description"]
 xy.to_csv("KeggOrthology_Table1.txt",encoding='utf-8')
 keggAnnotation = pd.read_table(GK_results,header=None)
 keggAnnotation.columns= ["gene_caller_id","accession"]
+keggAnnotation=keggAnnotation.replace({'genecall_': ''}, regex=True)
 keggAnnotation=keggAnnotation.dropna().set_index("accession")
 merged = keggAnnotation.join(xy)
 merged_reduced = merged.drop_duplicates(subset='gene_caller_id', keep="last")
-extracted = merged_reduced.filter(['gene_callers_id','function','accession']).reset_index().set_index('gene_caller_id')
+extracted = merged_reduced.filter(['gene_caller_id','description','accession']).reset_index().set_index('gene_caller_id')
 e_value = [0]*len(extracted['accession'].tolist())
 source = ['KeggGhostKoala']*len(extracted['accession'].tolist())
 extracted.insert(0,'source',source)
 extracted.insert(3,'e_value',e_value)
-extracted = extracted.reset_index()
+extracted= extracted.rename({'description':'function'},axis='columns')
 if arg_dict["interproscan"] is not None:
     interpro = pd.read_table(arg_dict["interproscan"],header=None)
-    interpro.columns=["gene_caller_id","MD5","Length","source","accession","description","start_loc","stop_loc","e_value","status","date","InterProAccession","InterProDescription","GOAnnotations","Pathway"]
-    InterProExtracted = interpro.filter(["gene_caller_id","source","accession","description","e_value"])
+    interpro.columns=["gene_caller_id","MD5","Length","source","accession","function","start_loc","stop_loc","e_value","status","date","InterProAccession","InterProDescription","GOAnnotations","Pathway"]
+    InterProExtracted = interpro.filter(["gene_caller_id","source","accession","function","e_value"])
+    InterProExtracted = InterProExtracted.replace({'genecall_': ''}, regex=True)
     KEGG_InterPro_Combined = pd.concat([extracted,InterProExtracted]).set_index('gene_caller_id')
     KEGG_InterPro_Combined.to_csv(output,sep='\t')
 else:
