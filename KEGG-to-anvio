@@ -25,7 +25,7 @@ y =pd.DataFrame(x[3].str.split(' ',1).tolist(),columns=['accession','description
 xy = pd.concat([x,y],axis=1).drop(3,1).set_index('accession')
 xy.columns= ["Category1","Category2","Category3","description"]
 xy.to_csv("KeggOrthology_Table1.txt",encoding='utf-8')
-keggAnnotation = pd.read_table(GK_results,index_col=None)
+keggAnnotation = pd.read_table(GK_results,header=None,names=["gene_callers_id","accession"],index_col=None)
 keggAnnotation=keggAnnotation.replace({'genecall_': ''}, regex=True)
 keggAnnotation=keggAnnotation.dropna().set_index("accession")
 merged = keggAnnotation.join(xy)
