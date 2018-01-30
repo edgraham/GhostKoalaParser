@@ -41,6 +41,7 @@ if arg_dict["interproscan"] is not None:
     interpro = pd.read_table(arg_dict["interproscan"],header=None,names=["gene_callers_id","MD5","Length","source","accession","function","start_loc","stop_loc","e_value","status","date","InterProAccession","InterProDescription","GOAnnotations","Pathway"])
     InterProExtracted = interpro.filter(["gene_callers_id","source","accession","function","e_value"])
     InterProExtracted = InterProExtracted.replace({'genecall_': ''}, regex=True)
+    InterProExtracted['e_value'] =InterProExtracted['e_value'].replace('-',0)
     InterProExtracted = InterProExtracted.set_index("gene_callers_id")
     KEGG_InterPro_Combined = pd.concat([extracted,InterProExtracted])
     KEGG_InterPro_Combined.to_csv(output,sep='\t')
