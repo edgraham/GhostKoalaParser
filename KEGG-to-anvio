@@ -35,7 +35,7 @@ e_value = [0]*len(extracted['accession'].tolist())
 source = ['KeggGhostKoala']*len(extracted['accession'].tolist())
 extracted.insert(0,'source',source)
 extracted.insert(3,'e_value',e_value)
-extracted= extracted.rename({'description':'function'},axis='columns')
+extracted= extracted.rename({'description':'function'})
 #print extracted.head()
 if arg_dict["interproscan"] is not None:
     interpro = pd.read_table(arg_dict["interproscan"],header=None,names=["gene_callers_id","MD5","Length","source","accession","function","start_loc","stop_loc","e_value","status","date","InterProAccession","InterProDescription","GOAnnotations","Pathway"])
